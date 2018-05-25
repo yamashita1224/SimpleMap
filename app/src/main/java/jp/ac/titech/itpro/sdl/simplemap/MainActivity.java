@@ -25,9 +25,13 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
@@ -49,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Manifest.permission.ACCESS_FINE_LOCATION
     };
     private final static int REQCODE_PERMISSIONS = 1234;
+
+    private double locationLatitude, locationLongitude;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +86,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d(TAG, "onLocationResult");
                 if (locationResult != null) {
                     Location location = locationResult.getLastLocation();
+                    locationLatitude = location.getLatitude();
+                    locationLongitude = location.getLongitude();
                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                     infoView.setText(getString(R.string.latlng_format,
                             latLng.latitude, latLng.longitude));
@@ -138,6 +146,31 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.d(TAG, "onMapReady");
         map.moveCamera(CameraUpdateFactory.zoomTo(15f));
         googleMap = map;
+        for (String permission : PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(this, permission)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, PERMISSIONS, REQCODE_PERMISSIONS);
+            }
+        }
+        googleMap.setMyLocationEnabled(true);
+        googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng position) {
+                googleMap.addMarker(new MarkerOptions().position(position).draggable(true));
+            }
+        });
+
+        googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                float results[] = new float[1];
+                Location.distanceBetween(marker.getPosition().latitude, marker.getPosition().longitude,
+                        locationLatitude, locationLongitude, results);
+                Toast.makeText(getApplicationContext(),
+                        "現在地からマーカーまでの距離：" + ((Float)(results[0]/1000)).toString() + "Km", Toast.LENGTH_LONG).show();
+                return false;
+            }
+        });
     }
 
     @Override
