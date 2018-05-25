@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final static int REQCODE_PERMISSIONS = 1234;
 
     private double locationLatitude, locationLongitude;
+    private boolean mapEnable = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         locationRequest = new LocationRequest();
-        // locationRequest.setInterval(10000L);
+        locationRequest.setInterval(10000L);
         locationRequest.setFastestInterval(5000L);
         locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
@@ -91,8 +92,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                     infoView.setText(getString(R.string.latlng_format,
                             latLng.latitude, latLng.longitude));
-                    if (googleMap != null)
+                    if (googleMap != null && !mapEnable){
                         googleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+                        mapEnable = true;
+                    }
                 }
             }
         };
@@ -103,7 +106,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View v) {
                 if (googleApiClient.isConnected()) {
-                    startLocationUpdate(true);
+                    if (googleMap != null)
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(locationLatitude, locationLongitude)));
+                    // startLocationUpdate(true);
                 }
             }
         });
